@@ -1,0 +1,11 @@
+
+
+<div class="form-group">
+  <label for="typeahead-http">Search:</label>
+  <input id="typeahead-http" type="text" class="form-control" [class.is-invalid]="searchFailed" [(ngModel)]="model" [ngbTypeahead]="search" placeholder="Stardog search" />
+  <span *ngIf="searching">searching...</span>
+  <div class="invalid-feedback" *ngIf="searchFailed">Sorry, suggestions could not be loaded.</div>
+</div>
+
+<hr>
+<pre>Model: {{ model | json }}</pre>
