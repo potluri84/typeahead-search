@@ -1,11 +1,37 @@
+<form [formGroup]="searchForm" (ngSubmit)="onSubmit()">
+    <div class="form-group">
+        <label for="typeahead-http">Search:</label>
 
+        <input id="typeahead-http" type="text" class="form-control" [class.is-invalid]="searchFailed" [(ngModel)]="model"
+            [ngbTypeahead]="search" placeholder="Stardog search" formControlName="searchText" />
+        <button class="btn btn-primary">Search</button>
 
-<div class="form-group">
-  <label for="typeahead-http">Search:</label>
-  <input id="typeahead-http" type="text" class="form-control" [class.is-invalid]="searchFailed" [(ngModel)]="model" [ngbTypeahead]="search" placeholder="Stardog search" />
-  <span *ngIf="searching">searching...</span>
-  <div class="invalid-feedback" *ngIf="searchFailed">Sorry, suggestions could not be loaded.</div>
-</div>
+        <span *ngIf="searching">searching...</span>
+
+        <div class="invalid-feedback" *ngIf="searchFailed">Sorry, suggestions could not be loaded.</div>
+    </div>
+</form>
+
 
 <hr>
 <pre>Model: {{ model | json }}</pre>
+
+<!--ul>
+    <li *ngFor="let item of items">
+        {{ item }}
+    </li>
+</ul-->
+
+<div *ngFor="let result of resultFromSparql">
+    <div class="card" style="width: 100%; margin-top: 10px">
+        <div class="card-body">
+            <h5 class="card-title"><a href="#">{{result.uri}}</a></h5>
+            <ul>
+                <li *ngFor="let match of result.matches">
+                    <h6 class="card-subtitle mb-2 text-muted"> Property: {{ match.propertyUri }}</h6>
+                    <p class="card-text">matches: {{ match.string}}</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

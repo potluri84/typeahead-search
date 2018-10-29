@@ -1,8 +1,15 @@
-import {Component, Injectable} from '@angular/core';
-import {HttpClient, HttpParams,HttpHeaders} from '@angular/common/http';
+import { Component, Injectable, OnInit } from '@angular/core';
+import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import {Observable, of} from 'rxjs';
-import {catchError, debounceTime, distinctUntilChanged, map, tap, switchMap} from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
+
+import { Apollo } from "apollo-angular";
+import gql from "graphql-tag";
+
+import { searchResult, result, typesOf, match, Query } from '../app/types';
+import { resultKeyNameFromField } from 'apollo-utilities';
 
 const WIKI_URL = 'https://en.wikipedia.org/w/api.php';
 const PARAMS = new HttpParams({
@@ -13,9 +20,13 @@ const PARAMS = new HttpParams({
   }
 });
 
+
+
+
+
 @Injectable()
 export class WikipediaService {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   search(term: string) {
     if (term === '') {
@@ -23,7 +34,7 @@ export class WikipediaService {
     }
 
     return this.http
-      .get(WIKI_URL, {params: PARAMS.set('search', term)}).pipe(
+      .get(WIKI_URL, { params: PARAMS.set('search', term) }).pipe(
         map(response => response[1])
       );
   }
@@ -79,12 +90,26 @@ export class ApiService {
   providers: [ApiService],
   styles: [`.form-control { width: 300px; display: inline; }`]
 })
-export class NgbdTypeaheadHttp {
+export class NgbdTypeaheadHttp implements OnInit {
+
+  searchForm: FormGroup;
+  submitted = false;
   model: any;
   searching = false;
   searchFailed = false;
+  items: Array<string> = [];
+  searchResult: searchResult;
+  resultFromSparql: result[];
 
-  constructor(private _apiService: ApiService) {}
+  constructor(private _apiService: ApiService, private formBuilder: FormBuilder, private apollo: Apollo) { }
+
+
+  ngOnInit(): void {
+    this.searchForm = this.formBuilder.group({
+      searchText: ['', Validators.required]
+    });
+  }
+
 
   search = (text$: Observable<string>) =>
     text$.pipe(
@@ -92,7 +117,7 @@ export class NgbdTypeaheadHttp {
       distinctUntilChanged(),
       tap(() => this.searching = true),
       switchMap(term =>
-        this._apiService.search(term,false).pipe(
+        this._apiService.search(term, false).pipe(
           tap(() => this.searchFailed = false),
           catchError(() => {
             this.searchFailed = true;
@@ -101,4 +126,55 @@ export class NgbdTypeaheadHttp {
       ),
       tap(() => this.searching = false)
     )
+
+
+  onSubmit() {
+    this.submitted = true;
+
+    console.log(this.searchForm.controls.searchText.value)
+    // stop here if form is invalid
+    if (this.searchForm.invalid) {
+      return;
+    }
+
+    this.apollo.query<Query>({
+      query: gql`query Search($uiText: String)
+                  {
+                    search(text: $uiText) {
+                      term
+                      results {
+                        uri
+                        label
+                        types {
+                          uri
+                        }
+                        matches {
+                          propertyUri
+                          string
+                        }
+                      }
+                    }
+                  }`, variables: { uiText: this.searchForm.controls.searchText.value }
+    })
+      .subscribe((res) => {
+        console.log(res);
+        this.searchResult = res.data.search;
+        this.resultFromSparql = res.data.search.results;
+      });
+
+
+    /*this._apiService.search(this.searchForm.value.searchText, false).pipe(
+      tap(() => this.searchFailed = false),
+      catchError(() => {
+        this.searchFailed = true;
+        return of([]);
+      })).subscribe(result => {
+        this.items.length = 0;
+        console.log(result);
+        this.items.push(result)
+      });*/
+
+  }
+
+
 }
