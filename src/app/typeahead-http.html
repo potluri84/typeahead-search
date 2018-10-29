@@ -35,3 +35,5 @@
         </div>
     </div>
 </div>
+
+<ngb-pagination [collectionSize]="total | async" (pageChange)="pageChanged($event)" [(page)]="page" aria-label="Default pagination"></ngb-pagination>

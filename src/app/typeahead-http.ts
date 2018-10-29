@@ -2,7 +2,7 @@ import { Component, Injectable, OnInit } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { Observable, of } from 'rxjs';
+import { Observable, of, pipe } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
 
 import { Apollo } from "apollo-angular";
@@ -10,35 +10,6 @@ import gql from "graphql-tag";
 
 import { searchResult, result, typesOf, match, Query } from '../app/types';
 import { resultKeyNameFromField } from 'apollo-utilities';
-
-const WIKI_URL = 'https://en.wikipedia.org/w/api.php';
-const PARAMS = new HttpParams({
-  fromObject: {
-    action: 'opensearch',
-    format: 'json',
-    origin: '*'
-  }
-});
-
-
-
-
-
-@Injectable()
-export class WikipediaService {
-  constructor(private http: HttpClient) { }
-
-  search(term: string) {
-    if (term === '') {
-      return of([]);
-    }
-
-    return this.http
-      .get(WIKI_URL, { params: PARAMS.set('search', term) }).pipe(
-        map(response => response[1])
-      );
-  }
-}
 
 
 const httpOptions = {
@@ -72,7 +43,7 @@ export class ApiService {
         let _URL = this.baseUrlForRest + queryString + '*';
         console.log('url', _URL);
         return this._http.get(_URL, httpOptions).pipe(
-          map(response => response.results[0].matches.map(a => a.string))
+          //map(response => response.results[0].matches.map(a => a.string))
         );
       }
     }
@@ -90,6 +61,9 @@ export class ApiService {
   providers: [ApiService],
   styles: [`.form-control { width: 300px; display: inline; }`]
 })
+
+
+
 export class NgbdTypeaheadHttp implements OnInit {
 
   searchForm: FormGroup;
@@ -100,14 +74,19 @@ export class NgbdTypeaheadHttp implements OnInit {
   items: Array<string> = [];
   searchResult: searchResult;
   resultFromSparql: result[];
-
-  constructor(private _apiService: ApiService, private formBuilder: FormBuilder, private apollo: Apollo) { }
+  page: number;
+  total: Promise<number>;
+  constructor(private formBuilder: FormBuilder, private apollo: Apollo) { }
 
 
   ngOnInit(): void {
     this.searchForm = this.formBuilder.group({
       searchText: ['', Validators.required]
     });
+
+    this.total = new Promise(resolve => setTimeout(() => resolve(50), 100));
+    
+
   }
 
 
@@ -117,7 +96,20 @@ export class NgbdTypeaheadHttp implements OnInit {
       distinctUntilChanged(),
       tap(() => this.searching = true),
       switchMap(term =>
-        this._apiService.search(term, false).pipe(
+        this.apollo.watchQuery<Query>({
+          query: gql`query Search($uiText: String)
+                  {
+                    search(text: $uiText) {
+                      term
+                      results {
+                        matches {
+                          string
+                        }
+                      }
+                    }
+                  }`, variables: { uiText: term + "*" }
+        }).valueChanges.pipe(
+          map(result => result.data.search.results[0].matches.map(a => a.string)),
           tap(() => this.searchFailed = false),
           catchError(() => {
             this.searchFailed = true;
@@ -176,5 +168,8 @@ export class NgbdTypeaheadHttp implements OnInit {
 
   }
 
+  pageChanged(page) {
+    console.log('Page changed: ' + page);
+  }
 
 }

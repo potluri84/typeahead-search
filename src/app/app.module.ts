@@ -6,6 +6,8 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppComponent } from './app.component';
 import { NgbdTypeaheadHttp } from './typeahead-http';
+import { NgbPaginationModule, NgbAlertModule } from '@ng-bootstrap/ng-bootstrap';
+
 
 
 import { ApolloModule, Apollo } from 'apollo-angular';
@@ -21,7 +23,8 @@ const cache = new InMemoryCache();
     HttpClientModule,
     NgbModule,
     ApolloModule,
-    HttpLinkModule
+    HttpLinkModule,
+    NgbPaginationModule
   ],
   declarations: [AppComponent, NgbdTypeaheadHttp],
   bootstrap: [AppComponent]
