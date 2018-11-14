@@ -5,11 +5,12 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Observable, of, pipe } from 'rxjs';
 import { catchError, debounceTime, distinctUntilChanged, map, tap, switchMap } from 'rxjs/operators';
 
-import { Apollo } from "apollo-angular";
+import { Apollo ,QueryRef} from "apollo-angular";
 import gql from "graphql-tag";
 
 import { searchResult, result, typesOf, match, Query } from '../app/types';
 import { resultKeyNameFromField } from 'apollo-utilities';
+import { FetchType } from 'apollo-client';
 
 
 const httpOptions = {
@@ -76,6 +77,13 @@ export class NgbdTypeaheadHttp implements OnInit {
   resultFromSparql: result[];
   page: number;
   total: Promise<number>;
+
+  feedQuery: QueryRef<any>;
+  private offset = 0;
+
+
+  itemsPerPage: number = 10;
+
   constructor(private formBuilder: FormBuilder, private apollo: Apollo) { }
 
 
@@ -129,29 +137,27 @@ export class NgbdTypeaheadHttp implements OnInit {
       return;
     }
 
-    this.apollo.query<Query>({
-      query: gql`query Search($uiText: String)
+    this.feedQuery = this.apollo.watchQuery<any>({
+      query: gql`query generalSearch($uiText: String,$type: String,$limit:String ,$offset:String)
                   {
-                    search(text: $uiText) {
-                      term
-                      results {
+                    generalSearch(text: $uiText,type: $type,limit: $limit,offset:$offset) {
+                        matches
                         uri
-                        label
-                        types {
-                          uri
-                        }
-                        matches {
-                          propertyUri
-                          string
-                        }
-                      }
+                        type
                     }
-                  }`, variables: { uiText: this.searchForm.controls.searchText.value }
-    })
-      .subscribe((res) => {
+                  }`,
+        variables: { 
+          uiText: this.searchForm.controls.searchText.value,
+          offset: "0",
+          limit: "5",
+          type: ""
+         },
+    });
+    //console.log(this.feedQuery.currentResult());
+    this.feedQuery.valueChanges.subscribe((res) => {
         console.log(res);
-        this.searchResult = res.data.search;
-        this.resultFromSparql = res.data.search.results;
+        //this.searchResult = res.data.search;
+        this.resultFromSparql = res.data.generalSearch;
       });
 
 
@@ -168,8 +174,46 @@ export class NgbdTypeaheadHttp implements OnInit {
 
   }
 
+
+  fetchMore() {
+    this.feedQuery.fetchMore({
+      // query: ... (you can specify a different query. feedQuery is used by default)
+      variables: {
+        offset: "5",
+      },
+      // We are able to figure out which offset to use because it matches
+      // the feed length, but we could also use state, or the previous
+      // variables to calculate this (see the cursor example below)
+      updateQuery: (prev, { fetchMoreResult }) => {
+        // push the new data
+        const data: Object = pushMatches<Object>(prev, { fetchMoreResult });
+        
+        return data;
+      },
+    });
+  }
+
+
+
+
   pageChanged(page) {
     console.log('Page changed: ' + page);
   }
 
 }
+
+
+function pushMatches<T>(prev: any, { fetchMoreResult }: any): T {
+  const newResults: result[] = fetchMoreResult.generalSearch;
+
+  if (!fetchMoreResult.generalSearch) {
+    return prev;
+  }
+
+  const newEntry: result[] = Object.assign({}, prev.generalSearch, newResults);
+
+  return Object.assign({}, prev, {
+    generalSearch: newEntry,
+  });
+}
+

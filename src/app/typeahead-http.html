@@ -21,19 +21,18 @@
         {{ item }}
     </li>
 </ul-->
-
+<div class="search-results" infiniteScroll [infiniteScrollDistance]="2"
+    [infiniteScrollThrottle]="50" [infiniteScrollContainer]="selector" [fromRoot]="true" (scrolled)="fetchMore()">
 <div *ngFor="let result of resultFromSparql">
     <div class="card" style="width: 100%; margin-top: 10px">
         <div class="card-body">
             <h5 class="card-title"><a href="#">{{result.uri}}</a></h5>
-            <ul>
-                <li *ngFor="let match of result.matches">
-                    <h6 class="card-subtitle mb-2 text-muted"> Property: {{ match.propertyUri }}</h6>
-                    <p class="card-text">matches: {{ match.string}}</p>
-                </li>
-            </ul>
+            <h6 class="card-subtitle mb-2 text-muted"> Property: {{ result.matches }}</h6>
+            <p class="card-text">matches: {{ result.type}}</p>
         </div>
     </div>
 </div>
+</div>
 
-<ngb-pagination [collectionSize]="total | async" (pageChange)="pageChanged($event)" [(page)]="page" aria-label="Default pagination"></ngb-pagination>
+
+<!---ngb-pagination [collectionSize]="total | async" (pageChange)="pageChanged($event)" [(page)]="page" aria-label="Default pagination"></ngb-pagination-->

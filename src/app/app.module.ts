@@ -8,6 +8,7 @@ import { AppComponent } from './app.component';
 import { NgbdTypeaheadHttp } from './typeahead-http';
 import { NgbPaginationModule, NgbAlertModule } from '@ng-bootstrap/ng-bootstrap';
 
+import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 
 
 import { ApolloModule, Apollo } from 'apollo-angular';
@@ -24,7 +25,9 @@ const cache = new InMemoryCache();
     NgbModule,
     ApolloModule,
     HttpLinkModule,
-    NgbPaginationModule
+    NgbPaginationModule,
+    InfiniteScrollModule
+
   ],
   declarations: [AppComponent, NgbdTypeaheadHttp],
   bootstrap: [AppComponent]
