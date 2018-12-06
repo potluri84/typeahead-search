@@ -138,7 +138,7 @@ export class NgbdTypeaheadHttp implements OnInit {
     }
 
     this.feedQuery = this.apollo.watchQuery<any>({
-      query: gql`query generalSearch($uiText: String,$type: String,$limit:String ,$offset:String)
+      query: gql`query generalSearch($uiText: String,$type: String,$limit:Int ,$offset:Int)
                   {
                     generalSearch(text: $uiText,type: $type,limit: $limit,offset:$offset) {
                         matches
@@ -148,8 +148,8 @@ export class NgbdTypeaheadHttp implements OnInit {
                   }`,
         variables: { 
           uiText: this.searchForm.controls.searchText.value,
-          offset: "0",
-          limit: "5",
+          offset: 0,
+          limit: 5,
           type: ""
          },
     });
@@ -159,19 +159,6 @@ export class NgbdTypeaheadHttp implements OnInit {
         //this.searchResult = res.data.search;
         this.resultFromSparql = res.data.generalSearch;
       });
-
-
-    /*this._apiService.search(this.searchForm.value.searchText, false).pipe(
-      tap(() => this.searchFailed = false),
-      catchError(() => {
-        this.searchFailed = true;
-        return of([]);
-      })).subscribe(result => {
-        this.items.length = 0;
-        console.log(result);
-        this.items.push(result)
-      });*/
-
   }
 
 
@@ -179,7 +166,7 @@ export class NgbdTypeaheadHttp implements OnInit {
     this.feedQuery.fetchMore({
       // query: ... (you can specify a different query. feedQuery is used by default)
       variables: {
-        offset: "5",
+        offset: this.resultFromSparql.length,
       },
       // We are able to figure out which offset to use because it matches
       // the feed length, but we could also use state, or the previous
@@ -204,16 +191,12 @@ export class NgbdTypeaheadHttp implements OnInit {
 
 
 function pushMatches<T>(prev: any, { fetchMoreResult }: any): T {
-  const newResults: result[] = fetchMoreResult.generalSearch;
 
   if (!fetchMoreResult.generalSearch) {
     return prev;
   }
-
-  const newEntry: result[] = Object.assign({}, prev.generalSearch, newResults);
-
   return Object.assign({}, prev, {
-    generalSearch: newEntry,
+    generalSearch: [...prev.generalSearch, ...fetchMoreResult.generalSearch],
   });
 }
 

@@ -1,7 +1,16 @@
 
+
 <div class="container-fluid">
 <nav class="navbar navbar-dark bg-primary">
-    <a class="navbar-brand" href="#">Sample Search Application with Angular and GraphQL</a>
+<a class="navbar-brand" routerLink="/app">Sample Search Application with Angular and GraphQL</a>
+<button *ngIf="!auth.isAuthenticated()" (click)="auth.login()">
+    Sign Up or Login
+</button>
+
+<button *ngIf="auth.isAuthenticated()" (click)="auth.logout()">
+    Logout
+</button>
 </nav>
   <ngbd-typeahead-http></ngbd-typeahead-http>
 </div>
+<router-outlet></router-outlet>
