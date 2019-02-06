@@ -1,0 +1,27 @@
+const { fetch , Headers} = require('../fetch');
+const qs = require('querystring');
+
+const { httpBody } = require('../response-transforms');
+const { mimeType, queryType } = require('./utils');
+
+const dispatchQuery = (endpoint,sparqlQuery) => {
+  const headers = new Headers();
+  headers.set('Accept', "application/sparql-results+json");
+  headers.set('Content-Type', 'application/x-www-form-urlencoded');
+
+
+  var uri = endpoint+"?"+qs.stringify({query:sparqlQuery});
+  return fetch(uri, {
+    method: 'GET',
+    headers
+  })
+    .then(httpBody)
+    .then(res => {
+      return res;
+    });
+};
+
+
+module.exports = {
+  dispatchQuery
+};
